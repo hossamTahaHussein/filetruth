@@ -1,0 +1,44 @@
+name: FileTruth verification
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      FILETRUTH_SANDBOX: docker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build isolated worker
+        run: make worker-image
+      - name: Install and build
+        run: |
+          make install web
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Unit and isolated integration tests
+        run: make test
+      - name: Evaluate fixtures and build offline evidence viewer
+        run: |
+          make benchmark
+          python -m scripts.offline_demo
+      - name: Browser workflow
+        run: |
+          python -m filetruth.cli serve > /tmp/filetruth-ci.log 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" || true' EXIT
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:8000/api/health
+          python -m scripts.browser_smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fixture-results
+          path: examples/benchmark.json

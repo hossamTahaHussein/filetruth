@@ -1,0 +1,7 @@
+*
+!pyproject.toml
+!LICENSE
+!filetruth
+!filetruth/*.py
+!requirements.lock
+!Dockerfile.runner

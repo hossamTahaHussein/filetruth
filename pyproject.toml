@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "filetruth"
+version = "0.1.0"
+description = "Checks PDF and DOCX files before ingestion: compares what a parser extracts with what the rendered page shows, flags hidden or missing text, and returns text that is safe to ingest."
+authors = [{ name = "Hossam Taha" }]
+requires-python = ">=3.12"
+license = "AGPL-3.0-only"
+dependencies = ["fastapi==0.141.1","uvicorn==0.52.1","PyMuPDF==1.26.6","pypdfium2==5.13.0","pypdf==6.21.4","python-docx==1.2.0","Pillow==13.0.0","lxml>=5.3,<7"]
+[project.optional-dependencies]
+test = ["httpx==0.28.1"]
+[project.urls]
+Homepage = "https://hossamtaha.me"
+Repository = "https://github.com/hossamTahaHussein/filetruth"
+[project.scripts]
+filetruth = "filetruth.cli:main"
+[tool.setuptools]
+packages = ["filetruth"]

@@ -1,0 +1,63 @@
+[
+  {
+    "file": "dispatch.pdf",
+    "mismatch": false,
+    "description": "Digital English PDF",
+    "language": "eng"
+  },
+  {
+    "file": "searchable.pdf",
+    "mismatch": false,
+    "description": "Matching scanned page and searchable layer",
+    "language": "eng"
+  },
+  {
+    "file": "revised.pdf",
+    "mismatch": true,
+    "description": "Old searchable layer on revised scan",
+    "language": "eng"
+  },
+  {
+    "file": "image-only.pdf",
+    "mismatch": true,
+    "description": "Image text omitted by native extraction",
+    "language": "eng"
+  },
+  {
+    "file": "hidden-instruction.pdf",
+    "mismatch": true,
+    "description": "Invisible text line extracted by the parser on a visibly ordinary invoice",
+    "language": "eng"
+  },
+  {
+    "file": "delivery-ar-en.pdf",
+    "mismatch": true,
+    "description": "The visible Arabic line سجل التسليم is corrupted in pinned pypdf output.",
+    "language": "eng+ara",
+    "scored": false
+  },
+  {
+    "file": "minutes.docx",
+    "mismatch": false,
+    "description": "Body paragraphs only",
+    "language": "eng"
+  },
+  {
+    "file": "handover.docx",
+    "mismatch": true,
+    "description": "Visible footer omitted by paragraph parser",
+    "language": "eng"
+  },
+  {
+    "file": "bilingual.docx",
+    "mismatch": false,
+    "description": "Arabic and English body paragraphs",
+    "language": "eng+ara"
+  },
+  {
+    "file": "bilingual-footer.docx",
+    "mismatch": true,
+    "description": "Arabic footer omitted from bilingual paragraph stream",
+    "language": "eng+ara"
+  }
+]

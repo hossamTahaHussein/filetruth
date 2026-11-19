@@ -1,0 +1,176 @@
+{
+  "unit": "document",
+  "size": 9,
+  "executed": 10,
+  "exploratory": 1,
+  "tp": 5,
+  "fp": 0,
+  "tn": 4,
+  "fn": 0,
+  "failed": 0,
+  "precision": 1.0,
+  "recall_including_failures": 1.0,
+  "false_positive_rate": 0.0,
+  "negative_documents_sent_to_review_or_block": 0,
+  "coverage": 1.0,
+  "cases": [
+    {
+      "file": "dispatch.pdf",
+      "mismatch": false,
+      "description": "Digital English PDF",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [],
+      "sha256": "9f7db5dfa082e21a6e419a49532484217cacdbf818162a53f43db455905aa7e3"
+    },
+    {
+      "file": "searchable.pdf",
+      "mismatch": false,
+      "description": "Matching scanned page and searchable layer",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "expected_hidden"
+      ],
+      "sha256": "05ebc40c7500ed748e29fc50a1336f094e25147f0cb1bcb352c7083784b243f8"
+    },
+    {
+      "file": "revised.pdf",
+      "mismatch": true,
+      "description": "Old searchable layer on revised scan",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected",
+        "suspected"
+      ],
+      "sha256": "636077334644152cbe701d4c1d3d68454041263499ca0fabd99422bb5f4c3728"
+    },
+    {
+      "file": "image-only.pdf",
+      "mismatch": true,
+      "description": "Image text omitted by native extraction",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "475a3584dff66b6f1d07dce39d68a58a2ec286275ac19ebedae05a7f7bf0d1b9"
+    },
+    {
+      "file": "hidden-instruction.pdf",
+      "mismatch": true,
+      "description": "Invisible text line extracted by the parser on a visibly ordinary invoice",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "e6d90d6029e38f7745b29f7ef6ae2956009453efbe44a18e89789fe89a68d136"
+    },
+    {
+      "file": "delivery-ar-en.pdf",
+      "mismatch": true,
+      "description": "The visible Arabic line سجل التسليم is corrupted in pinned pypdf output.",
+      "language": "eng+ara",
+      "scored": false,
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected",
+        "suspected"
+      ],
+      "sha256": "f49a7f08c6ae44881f98311dcc61c61eba116950d0ee61c1fccb982ffdead20a"
+    },
+    {
+      "file": "minutes.docx",
+      "mismatch": false,
+      "description": "Body paragraphs only",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [],
+      "sha256": "a277d31bb71a8876b81d282354b9c402d28227be510b75e378014b015375142a"
+    },
+    {
+      "file": "handover.docx",
+      "mismatch": true,
+      "description": "Visible footer omitted by paragraph parser",
+      "language": "eng",
+      "policy": "Block",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [
+        "confirmed",
+        "unverifiable"
+      ],
+      "sha256": "768ffaf75f0d0dcef41d2e8d9bd128b0de03d240da1c2bdf85fa588fb093a248"
+    },
+    {
+      "file": "bilingual.docx",
+      "mismatch": false,
+      "description": "Arabic and English body paragraphs",
+      "language": "eng+ara",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [],
+      "sha256": "909b97e0cc99ce1c88ac757cdb641f93f4f2212a238f63f7afcbccf2a5956d1a"
+    },
+    {
+      "file": "bilingual-footer.docx",
+      "mismatch": true,
+      "description": "Arabic footer omitted from bilingual paragraph stream",
+      "language": "eng+ara",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "a0a7e8f694693160be076e03cca78b239b4e2e055c2808946d37e210f50b8835"
+    }
+  ]
+}
