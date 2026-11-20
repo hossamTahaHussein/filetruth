@@ -34,7 +34,7 @@ from pypdf.errors import PyPdfError
 from pypdfium2.version import PDFIUM_INFO
 
 from . import capture, ocr, office
-from .alignment import compare, key, outcome, overlaps, reconcile
+from .alignment import STRONG_QUALITY, compare, key, outcome, overlaps, reconcile
 from .sandbox import Rejected, Unavailable
 
 DOCUMENT = Path("/input/document")
@@ -59,6 +59,7 @@ RENDER_SCALE = 2.5
 RENDER_LONGEST_SIDE = 2100
 # Tesseract can drop a line at one scale and read it at another.
 OCR_RETRY_SCALE = 0.8
+MAX_REGION_READS_PER_PAGE = 12
 PREVIEW_SIZE = (900, 1100)
 
 # Painted text counts as concealed below this size, or when the pixels under it
@@ -204,6 +205,38 @@ def retry_ocr_for_gaps(image, size, language, installed, seconds, ocr_lines, not
     return ocr_lines, notes
 
 
+def reread_doubtful_lines(
+    image, size, language, installed, ocr_seconds, ocr_lines, painted
+):
+    """Give a poorly read line a second chance as a region of its own.
+
+    Applies to OCR lines below the strong-quality mark that sit on a painted
+    line. The painted line only says where to look. The pixels are read again,
+    and the new reading is kept only if Tesseract is more confident in it.
+    """
+    result, budget = [], MAX_REGION_READS_PER_PAGE
+    for line in ocr_lines:
+        target = None
+        if budget and line["quality"] < STRONG_QUALITY and not line.get("region_read"):
+            target = next(
+                (
+                    candidate
+                    for candidate in painted
+                    if overlaps(candidate["bbox"], line["bbox"])
+                ),
+                None,
+            )
+        if target:
+            budget -= 1
+            again = ocr.recognize_region(
+                image, size, target["bbox"], language, installed, ocr_seconds()
+            )
+            if again and again["quality"] > line["quality"]:
+                line = again
+        result.append(line)
+    return result
+
+
 def mark_painted_witnesses(ocr_lines, painted):
     """Note on each OCR line whether painted text says the same thing there.
 
@@ -277,6 +310,20 @@ def inspect_page(
     if can_ocr and unread_lines(painted, ocr_lines):
         ocr_lines, notes = retry_ocr_for_gaps(
             image, size, language, installed, ocr_seconds(), ocr_lines, notes
+        )
+    # Full-page layout analysis can still drop a line that is plainly there.
+    # Read each remaining gap on its own, unless nothing is visible in it.
+    if can_ocr:
+        for line in unread_lines(painted, ocr_lines)[:MAX_REGION_READS_PER_PAGE]:
+            if concealment(image, size, line):
+                continue
+            found = ocr.recognize_region(
+                image, size, line["bbox"], language, installed, ocr_seconds()
+            )
+            if found:
+                ocr_lines.append(found)
+        ocr_lines = reread_doubtful_lines(
+            image, size, language, installed, ocr_seconds, ocr_lines, painted
         )
     mark_painted_witnesses(ocr_lines, painted)
 

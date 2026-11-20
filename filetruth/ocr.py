@@ -11,12 +11,22 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 
+from PIL import ImageOps
+
 PAGE_IMAGE = Path("/tmp/page.png")
 NO_WORDS = "Page has visible marks but OCR returned no words."
 # A page counts as blank when no pixel is darker than this (0 black, 255 white).
 BLANK_PAGE_DARKEST = 220
 # Tesseract TSV rows at level 5 are single words.
 WORD_LEVEL = "5"
+# Page segmentation modes. Full-page layout analysis can drop a whole line,
+# most often a short right-to-left one. Reading a cropped region as one raw
+# line skips that analysis.
+FULL_PAGE = "3"
+RAW_LINE = "13"
+# Margin around a cropped line: page points kept from the page, then white pixels.
+REGION_MARGIN_POINTS = 6
+REGION_BORDER_PIXELS = 40
 
 
 def languages():
@@ -34,7 +44,7 @@ def languages():
         return set()
 
 
-def run_tesseract(image, models, timeout):
+def run_tesseract(image, models, timeout, layout=FULL_PAGE):
     """OCR one image. Returns the TSV rows, or None if Tesseract failed."""
     image.save(PAGE_IMAGE)
     try:
@@ -46,7 +56,9 @@ def run_tesseract(image, models, timeout):
                 "-l",
                 "+".join(models),
                 "--psm",
-                "3",  # Fully automatic page layout analysis.
+                layout,
+                # A crop carries no resolution, so state one for raw-line reads.
+                *(("--dpi", "300") if layout == RAW_LINE else ()),
                 "tsv",
             ],
             capture_output=True,
@@ -101,6 +113,47 @@ def group_into_lines(rows, points_per_pixel):
             }
         )
     return lines
+
+
+def recognize_region(image, size, box, requested, installed, timeout=12):
+    """Read one region of the page as a single line.
+
+    `box` is in page points. Returns one line placed at `box`, or None when
+    nothing was read. Used for places where the file draws text that the
+    full-page pass returned nothing for.
+    """
+    models = [language for language in requested.split("+") if language in installed]
+    if not models or timeout < 1:
+        return None
+    across, down = image.width / size[0], image.height / size[1]
+    crop = image.crop(
+        (
+            max(0, int((box[0] - REGION_MARGIN_POINTS) * across)),
+            max(0, int((box[1] - REGION_MARGIN_POINTS) * down)),
+            min(image.width, int((box[2] + REGION_MARGIN_POINTS) * across)),
+            min(image.height, int((box[3] + REGION_MARGIN_POINTS) * down)),
+        )
+    )
+    if crop.width < 2 or crop.height < 2:
+        return None
+    # Tesseract reads text touching the image edge poorly, so add a white frame.
+    framed = ImageOps.expand(crop, border=REGION_BORDER_PIXELS, fill="white")
+    rows = run_tesseract(framed, models, timeout, layout=RAW_LINE)
+    if rows is None or not rows.fieldnames or "text" not in rows.fieldnames:
+        return None
+    words = [
+        (row["text"], float(row["conf"]))
+        for row in rows
+        if row["level"] == WORD_LEVEL and row["text"].strip()
+    ]
+    if not words:
+        return None
+    return {
+        "text": " ".join(text for text, _ in words),
+        "quality": round(min(confidence for _, confidence in words), 1),
+        "bbox": [round(value, 2) for value in box],
+        "region_read": True,
+    }
 
 
 def recognize(image, size, requested, installed, timeout=12):

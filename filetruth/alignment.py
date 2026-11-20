@@ -715,8 +715,8 @@ def reconcile(segments, findings):
         text = segment["text"]
         if cuts[segment_id]:
             text = cut_ranges(text, cuts[segment_id]).strip()
-            if not text:
-                continue
+        if not text.strip():
+            continue  # Nothing to ingest from an empty segment.
         order = (segment["page"], 0, segment_id) if paged else (0, 0, segment_id)
         entry = {
             "page": segment["page"],
