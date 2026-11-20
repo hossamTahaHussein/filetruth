@@ -61,6 +61,11 @@ RENDER_LONGEST_SIDE = 2100
 OCR_RETRY_SCALE = 0.8
 PREVIEW_SIZE = (900, 1100)
 
+# Painted text counts as concealed below this size, or when the pixels under it
+# differ by less than this much brightness (0-255).
+MIN_READABLE_POINTS = 4
+MIN_INK_CONTRAST = 40
+
 # PyMuPDF `char_flags` bits that mark a span as drawn (filled or stroked).
 FILLED_OR_STROKED = 8 | 16
 # PDF text render mode 3 draws nothing. Parsers still read the text.
@@ -110,8 +115,40 @@ def painted_lines(mupdf_page):
             if visible:
                 box = pymupdf.Rect(line["bbox"]) * mupdf_page.rotation_matrix
                 text = "".join(span["text"] for span in visible)
-                lines.append({"text": text, "bbox": rounded_box(box)})
+                lines.append(
+                    {
+                        "text": text,
+                        "bbox": rounded_box(box),
+                        "points": round(max(span["size"] for span in visible), 2),
+                    }
+                )
     return lines
+
+
+def concealment(page_image, size, line):
+    """Why a painted line cannot actually be seen, or None if it can.
+
+    "Painted" only means the file asks for the text to be drawn. White text on
+    a white page, text under a flat shape, text outside the page and text one
+    point tall are all painted, and none can be read. The rendered pixels
+    settle it: no contrast where the text sits means nothing is visible there.
+    """
+    if line["points"] < MIN_READABLE_POINTS:
+        return f"Text is {line['points']} pt tall, too small to read."
+    across, down = page_image.width / size[0], page_image.height / size[1]
+    left, top, right, bottom = line["bbox"]
+    region = (
+        max(0, round(left * across)),
+        max(0, round(top * down)),
+        min(page_image.width, round(right * across)),
+        min(page_image.height, round(bottom * down)),
+    )
+    if region[2] <= region[0] or region[3] <= region[1]:
+        return "Text is positioned outside the visible page."
+    darkest, lightest = page_image.crop(region).convert("L").getextrema()
+    if lightest - darkest < MIN_INK_CONTRAST:
+        return "The rendered page shows no visible ink where this text is positioned."
+    return None
 
 
 def hidden_spans(mupdf_page):
@@ -188,6 +225,19 @@ def mark_painted_witnesses(ocr_lines, painted):
         line["painted_match"] = witness is not None
         if witness:
             line["painted_source"] = witness
+            continue
+        # No exact match. Keep the painted line in the same place, if any, so
+        # the comparison can tell a one-letter OCR slip from a real difference.
+        nearby = next(
+            (
+                candidate
+                for candidate in painted
+                if overlaps(candidate["bbox"], line["bbox"])
+            ),
+            None,
+        )
+        if nearby:
+            line["painted_near"] = {"text": nearby["text"], "bbox": nearby["bbox"]}
 
 
 def preview_jpeg(image):
@@ -241,12 +291,16 @@ def inspect_page(
         if len(hidden) > MAX_HIDDEN_SPANS_PER_PAGE:
             raise Rejected("Too many structural spans.")
 
+    unread = unread_lines(painted, ocr_lines)
+    for line in unread:
+        line["concealed"] = concealment(image, size, line)
+
     page = {
         "number": number,
         "width": width,
         "height": height,
         "ocr": ocr_lines,
-        "unread": unread_lines(painted, ocr_lines),
+        "unread": unread,
         "warnings": notes,
         "preview_jpeg": preview_jpeg(image),
     }

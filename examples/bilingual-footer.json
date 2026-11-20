@@ -56,7 +56,8 @@
               71.99,
               170.14,
               86.97
-            ]
+            ],
+            "points": 11.0
           }
         },
         {
@@ -68,7 +69,16 @@
             158.8,
             114.0
           ],
-          "painted_match": false
+          "painted_match": false,
+          "painted_near": {
+            "text": "محضر االجتماع",
+            "bbox": [
+              90.2,
+              99.24,
+              157.95,
+              112.04
+            ]
+          }
         },
         {
           "text": "مراجعة السجلات",
@@ -79,7 +89,16 @@
             166.0,
             756.5
           ],
-          "painted_match": false
+          "painted_match": false,
+          "painted_near": {
+            "text": "مراجعة السجالت",
+            "bbox": [
+              90.2,
+              743.19,
+              166.9,
+              755.99
+            ]
+          }
         }
       ],
       "unread": [],
@@ -117,7 +136,16 @@
             166.0,
             756.5
           ],
-          "painted_match": false
+          "painted_match": false,
+          "painted_near": {
+            "text": "مراجعة السجالت",
+            "bbox": [
+              90.2,
+              743.19,
+              166.9,
+              755.99
+            ]
+          }
         }
       ]
     }

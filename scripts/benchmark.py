@@ -34,13 +34,8 @@ def main():
                 classes=[f["classification"] for f in r["findings"]],
                 sha256=r["sha256"],
             )
-            if args.examples and path.stem in {
-                "searchable",
-                "revised",
-                "handover",
-                "bilingual-footer",
-                "hidden-instruction",
-            }:
+            # Every fixture doubles as an example report for the viewer.
+            if args.examples:
                 (ROOT / "examples" / (path.stem + ".json")).write_text(
                     json.dumps(r, ensure_ascii=False, indent=2) + "\n"
                 )

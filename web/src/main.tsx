@@ -13,6 +13,8 @@ const codes: Record<string, string> = {
   line_order: "Different token order",
   line_sequence: "Line not found as one sequence",
   unlinked_layer: "Unlocated text layer",
+  concealed_text: "Text drawn where it cannot be seen",
+  invisible_unicode: "Invisible Unicode characters",
   painted_only: "Painted text missing from parser",
   ocr_gap: "Region not read by OCR",
   visual_only: "Text in the rendered page",
@@ -432,16 +434,43 @@ function Workspace({
   );
 }
 
-const exampleNames = [
-  "handover",
-  "hidden-instruction",
-  "revised",
-  "searchable",
-  "bilingual-footer",
+// Every fixture is an example. The key is the file name without its extension.
+const exampleGroups: { title: string; files: string[] }[] = [
+  {
+    title: "Hidden from the reader",
+    files: [
+      "hidden-instruction.pdf",
+      "white-text.pdf",
+      "tiny-text.pdf",
+      "covered-text.pdf",
+      "offpage-text.pdf",
+      "hidden-run.docx",
+      "white-run.docx",
+      "tag-characters.docx",
+    ],
+  },
+  {
+    title: "Missed by the parser",
+    files: ["handover.docx", "bilingual-footer.docx", "image-only.pdf"],
+  },
+  {
+    title: "Page and text disagree",
+    files: ["revised.pdf", "delivery-ar-en.pdf"],
+  },
+  {
+    title: "Nothing wrong",
+    files: [
+      "dispatch.pdf",
+      "searchable.pdf",
+      "small-print.pdf",
+      "gray-text.pdf",
+      "shaded-box.pdf",
+      "minutes.docx",
+      "bilingual.docx",
+    ],
+  },
 ];
-const exampleLabels: Record<string, string> = {
-  "hidden-instruction": "hidden-instruction.pdf (invisible text)",
-};
+const exampleKey = (file: string) => file.replace(/\.[a-z]+$/, "");
 const embedded = document.getElementById("filetruth-examples");
 const samples = embedded
   ? (JSON.parse(embedded.textContent || "{}") as Record<string, Report>)
@@ -555,14 +584,14 @@ function App() {
             onChange={(e) => void loadSample(e.target.value)}
           >
             {!example && <option value="">Uploaded document</option>}
-            {exampleNames.map((n) => (
-              <option key={n} value={n}>
-                {exampleLabels[n] ??
-                  n +
-                    (["handover", "bilingual-footer"].includes(n)
-                      ? ".docx"
-                      : ".pdf")}
-              </option>
+            {exampleGroups.map((group) => (
+              <optgroup key={group.title} label={group.title}>
+                {group.files.map((file) => (
+                  <option key={file} value={exampleKey(file)}>
+                    {file}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>

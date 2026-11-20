@@ -1,11 +1,11 @@
 {
   "unit": "document",
-  "size": 9,
-  "executed": 10,
+  "size": 19,
+  "executed": 20,
   "exploratory": 1,
-  "tp": 5,
+  "tp": 12,
   "fp": 0,
-  "tn": 4,
+  "tn": 7,
   "fn": 0,
   "failed": 0,
   "precision": 1.0,
@@ -92,6 +92,160 @@
         "suspected"
       ],
       "sha256": "e6d90d6029e38f7745b29f7ef6ae2956009453efbe44a18e89789fe89a68d136"
+    },
+    {
+      "file": "white-text.pdf",
+      "mismatch": true,
+      "description": "White text on a white page",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "b455d91dbc8086a449471395d603a4751f1918b4a15f6ffac0e0e71dc4077b26"
+    },
+    {
+      "file": "tiny-text.pdf",
+      "mismatch": true,
+      "description": "Text one point tall",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "f0e6fa455a96bd663b9c1cddd62bf02b9b1055a349b0dcbc936076ef367e159a"
+    },
+    {
+      "file": "offpage-text.pdf",
+      "mismatch": true,
+      "description": "Text positioned above the top edge of the page",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "ba5d30939312882e19824d7be31678e162b76e37981d31697e16659127695a65"
+    },
+    {
+      "file": "covered-text.pdf",
+      "mismatch": true,
+      "description": "Text covered by a white rectangle",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "7d400f071645516e358c23ee7e44539599f2c1d6f3a5abfb1064d5ba1e0b29d8"
+    },
+    {
+      "file": "hidden-run.docx",
+      "mismatch": true,
+      "description": "Word run formatted as hidden text",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "eb36412f0e0370ed84f2aad14d23af45ae6dad96a504eb16c9c0e6e75506512b"
+    },
+    {
+      "file": "white-run.docx",
+      "mismatch": true,
+      "description": "White text in a Word paragraph",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "a2ac8c9cc3c60e82e2a023e1d989dfc7e79ea305d9cc41e2dc1aa10da1e44eee"
+    },
+    {
+      "file": "tag-characters.docx",
+      "mismatch": true,
+      "description": "Invisible Unicode tag characters",
+      "language": "eng",
+      "policy": "Review",
+      "predicted_mismatch": true,
+      "parser": {
+        "name": "python-docx",
+        "version": "1.2.0"
+      },
+      "classes": [
+        "suspected"
+      ],
+      "sha256": "80b624eb0f4f49885ddd64d282ac527f2f3d02e70a3dbddf40fd17fb3f5595fc"
+    },
+    {
+      "file": "small-print.pdf",
+      "mismatch": false,
+      "description": "Readable small print in a footer",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [],
+      "sha256": "83f8d145f94eaccf9803e1ab047af2bc2c1a7064e5497c7ac19812fab69843a7"
+    },
+    {
+      "file": "gray-text.pdf",
+      "mismatch": false,
+      "description": "Readable mid-grey text",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [],
+      "sha256": "d27e28af3c1074460cd595b0f1bf3f27e3cbf48d105e295d4b0caca39d99a40a"
+    },
+    {
+      "file": "shaded-box.pdf",
+      "mismatch": false,
+      "description": "Text inside a light grey box",
+      "language": "eng",
+      "policy": "Allow",
+      "predicted_mismatch": false,
+      "parser": {
+        "name": "pypdf",
+        "version": "6.21.4"
+      },
+      "classes": [],
+      "sha256": "34614d0f5ca756e9d7bacfc108f55df250ec9459d6ce8bd0e42698b67caef985"
     },
     {
       "file": "delivery-ar-en.pdf",

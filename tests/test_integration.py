@@ -57,6 +57,37 @@ class PipelineTests(unittest.TestCase):
         self.assertIn("ara", r["tools"]["ocr_models_available"])
         self.assertTrue(any("السجلات" in f["excerpt"] for f in r["findings"]))
 
+    def test_concealed_text_never_reaches_the_clean_text(self):
+        # Same visible invoice every time. Only the concealment technique changes.
+        expected = {
+            "hidden-instruction.pdf": "unmatched_layer",
+            "white-text.pdf": "concealed_text",
+            "tiny-text.pdf": "concealed_text",
+            "covered-text.pdf": "concealed_text",
+            "offpage-text.pdf": "parser_only",
+            "hidden-run.docx": "parser_only",
+            "white-run.docx": "concealed_text",
+            "tag-characters.docx": "invisible_unicode",
+        }
+        for name, code in expected.items():
+            with self.subTest(file=name):
+                r = verify(name)
+                self.assertEqual(r["policy"], "Review")
+                self.assertIn(code, [f["code"] for f in r["findings"]])
+                clean = r["reconciled"]
+                self.assertEqual(clean["status"], "reconciled")
+                self.assertIn("Pay to Muscat Supplies", clean["text"])
+                for leaked in ("Ignore", "approve", "50000", "\U000e0061"):
+                    self.assertNotIn(leaked, clean["text"])
+
+    def test_ordinary_look_alikes_are_allowed(self):
+        for name in ("small-print.pdf", "gray-text.pdf", "shaded-box.pdf"):
+            with self.subTest(file=name):
+                r = verify(name)
+                self.assertEqual(r["findings"], [])
+                self.assertEqual(r["policy"], "Allow")
+                self.assertEqual(r["reconciled"]["status"], "unchanged")
+
     def test_capture_and_wrong_digest(self):
         path = FIX / "dispatch.pdf"
         cap = {

@@ -349,12 +349,56 @@ def check_hidden_span(parser, page, span):
     ), covered
 
 
+def one_edit_apart(first, second):
+    """Whether two different words differ by one inserted, dropped or changed letter."""
+    if abs(len(first) - len(second)) > 1:
+        return False
+    if len(first) > len(second):
+        first, second = second, first
+    for place in range(len(second)):
+        if place == len(first) or first[place] != second[place]:
+            skip_one = first[place:] == second[place + 1 :]
+            swap_one = first[place + 1 :] == second[place + 1 :]
+            return skip_one or (len(first) == len(second) and swap_one)
+    return False
+
+
+def without_ocr_slips(line):
+    """The line's text with one-letter OCR misreadings corrected, or None.
+
+    OCR often gets a single letter wrong ("alll" for "all"). When positioned
+    painted text sits in the same place and differs only that way, the painted
+    spelling is what the page says. The rule is narrow on purpose: same number
+    of tokens, one letter per word, words of four or more letters, and never
+    anything containing a digit. Amounts and short words such as "now" and
+    "not" must match exactly.
+    """
+    painted = line.get("painted_near")
+    if not painted:
+        return None
+    seen, drawn = key(line["text"]), key(painted["text"])
+    if len(seen) != len(drawn):
+        return None
+    for read, actual in zip(seen, drawn):
+        if read == actual:
+            continue
+        has_digit = any(char.isdigit() for char in read + actual)
+        too_short = max(len(read), len(actual)) < 4
+        if has_digit or too_short or not one_edit_apart(read, actual):
+            return None
+    return painted["text"]
+
+
 def check_ocr_line(parser, page, line, already_reported):
     """Compare one visible line with the parser output. Returns a finding or None."""
     number = page["number"]
-    words = list(key(line["text"]))
+    corrected = without_ocr_slips(line)
+    if corrected:
+        line["ocr_slip_corrected"] = True
+    visible_text = corrected or line["text"]
+    words = list(key(visible_text))
     quality = line["quality"]
-    missing = parser.claim(number, line["text"])
+    missing = parser.claim(number, visible_text)
     if missing:
         # Block-level proof that the parser omits a whole visible line: legible
         # OCR, matching painted text, a clean page, and not one of the line's
@@ -397,7 +441,7 @@ def check_ocr_line(parser, page, line, already_reported):
     worth_checking = (
         len(words) >= 2
         and quality >= STRONG_QUALITY
-        and line["text"].isascii()
+        and visible_text.isascii()
         and id(line) not in already_reported
     )
     if worth_checking and not parser.has_run(number, words):
@@ -422,7 +466,34 @@ def check_unread_line(parser, page, painted):
     or Block. It still claims parser tokens, which keeps an OCR gap from being
     reported as surplus parser text.
     """
-    missing = parser.claim(page["number"], painted["text"])
+    number = page["number"]
+    missing = parser.claim(number, painted["text"])
+    words = list(key(painted["text"]))
+    concealed = painted.get("concealed")
+    if concealed:
+        # The file draws this text where nobody can see it. That only matters
+        # if the parser reads it. Unseen and unread text changes nothing.
+        if len(missing) == len(words):
+            return None
+        places = parser.locate(number, words)
+        location = {}
+        excerpt = painted["text"]
+        if len(places) == 1:
+            segment_id, start, end = places[0]
+            location = dict(segment=segment_id, span=[start, end])
+            excerpt = parser.segments[segment_id]["text"][start:end]
+        item = finding(
+            "suspected",
+            "concealed_text",
+            concealed + " The selected parser still extracts it.",
+            page=number,
+            bbox=painted["bbox"],
+            excerpt=excerpt,
+            confidence="indicative",
+            **location,
+        )
+        item["painted_source"] = painted
+        return item
     if missing:
         kind, code = "suspected", "painted_only"
         detail = (
@@ -442,6 +513,38 @@ def check_unread_line(parser, page, painted):
     )
     item["painted_source"] = painted
     return item
+
+
+# Unicode "tag" characters mirror ASCII but are never drawn by any viewer. A
+# run of them is a readable message that only software can see.
+TAG_CHARACTERS = re.compile("[\U000e0000-\U000e007f]+")
+TAG_OFFSET = 0xE0000
+
+
+def tag_character_findings(segments):
+    """Report runs of invisible Unicode tag characters, with their decoded text."""
+    results = []
+    for segment_id, segment in enumerate(segments):
+        for match in TAG_CHARACTERS.finditer(segment["text"]):
+            decoded = "".join(
+                chr(ord(char) - TAG_OFFSET)
+                for char in match.group()
+                if 0x20 <= ord(char) - TAG_OFFSET < 0x7F
+            )
+            results.append(
+                finding(
+                    "suspected",
+                    "invisible_unicode",
+                    "The parser output contains Unicode tag characters, which no viewer displays. Decoded content: "
+                    + (decoded or "(no printable characters)"),
+                    page=segment["page"],
+                    segment=segment_id,
+                    span=list(match.span()),
+                    excerpt=decoded,
+                    confidence="indicative",
+                )
+            )
+    return results
 
 
 def surplus_parser_text(parser, covered):
@@ -507,7 +610,12 @@ def compare(segments, pages, hidden_spans):
             if item:
                 findings.append(item)
         for painted in page.get("unread", []):
-            findings.append(check_unread_line(parser, page, painted))
+            item = check_unread_line(parser, page, painted)
+            if item:
+                findings.append(item)
+    for item in tag_character_findings(segments):
+        findings.append(item)
+        covered[item["segment"]].append(tuple(item["range"]))
     findings += surplus_parser_text(parser, covered)
     return sorted(findings, key=lambda item: SEVERITY[item["classification"]])
 
@@ -528,6 +636,8 @@ REMOVAL_REASONS = {
     "conflicting_layer": "Hidden text layer that conflicts with the visible text.",
     "partial_layer": "Hidden text layer that only partly matches the visible text.",
     "parser_only": "Parser text that no visible text confirms.",
+    "concealed_text": "Text drawn where it cannot be seen.",
+    "invisible_unicode": "Invisible Unicode tag characters.",
 }
 # These two are also disagreements about what the page says. A person decides.
 CONFLICTS = {"conflicting_layer", "partial_layer"}

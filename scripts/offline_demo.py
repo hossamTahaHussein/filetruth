@@ -19,14 +19,9 @@ html = re.sub(
     r'<link[^>]+href="[^"]+\.css"[^>]*>', lambda _: "<style>" + css + "</style>", html
 )
 samples = {
-    name: json.loads((ROOT / "examples" / (name + ".json")).read_text())
-    for name in (
-        "handover",
-        "hidden-instruction",
-        "searchable",
-        "revised",
-        "bilingual-footer",
-    )
+    path.stem: json.loads(path.read_text())
+    for path in sorted((ROOT / "examples").glob("*.json"))
+    if path.name != "benchmark.json"
 }
 payload = json.dumps(samples, ensure_ascii=False).replace("<", "\\u003c")
 html = html.replace(

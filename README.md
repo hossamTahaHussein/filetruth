@@ -67,7 +67,7 @@ curl -fsS -H 'Content-Type: application/octet-stream' \
 | Interface | Behavior |
 |---|---|
 | `POST /api/scans` | Raw bounded body. Required query field `filename`. Optional `parser` and `language`. Returns the full report synchronously. |
-| `GET /api/demo?sample=handover` | Synthetic saved report. Other sample keys are `hidden-instruction`, `revised`, `searchable`, and `bilingual-footer`. |
+| `GET /api/demo?sample=handover` | Synthetic saved report. The sample key is any fixture's file name without its extension, for example `hidden-instruction`, `white-text` or `revised`. |
 | `GET /api/health` | Service liveness. Run a real fixture to verify converter readiness. |
 | `GET /openapi.json` | Machine-readable routes. |
 | Errors | 408 upload deadline, 413 size, 415 media type, 422 rejected input, 429 concurrency limit, 503 unavailable worker or exhausted execution budget. |
@@ -105,7 +105,7 @@ Python integrations can call `filetruth.sandbox.scan(data, filename, capture=cap
 | Finding | Evidence required in this MVP | Policy |
 |---|---|---|
 | Confirmed | Independent rendered OCR and spatially matching painted text substantiate an omitted line, or triangulate a conflicting non-painting layer linked to the parser. | Block |
-| Suspected | Surplus parser tokens, unsupported local layer text, a sufficiently legible OCR-only difference, or a legible rendered line whose tokens the parser never emits together in that order (values exchanged between lines, or a different reading sequence). | Review |
+| Suspected | Text the file draws where it cannot be seen (white on white, under a flat shape, off the page, under 4 pt) that the parser still extracts, invisible Unicode tag characters, surplus parser tokens, unsupported local layer text, a sufficiently legible OCR-only difference, or a legible rendered line whose tokens the parser never emits together in that order (values exchanged between lines, or a different reading sequence). | Review |
 | Expected hidden | A non-painting searchable span agrees with the OCR text in the same region. | Allow when no higher-priority finding exists |
 | Unverifiable | Missing OCR models, unrecognized visible marks, low-confidence OCR surplus, painted text that OCR left unread, pages left unread when the time budget ran out, non-painting text the parser emitted but that cannot be located uniquely or as one run, or inconsistent page geometry. | Review |
 | No findings | Supported checks completed with no reported differences. | Allow |
@@ -141,7 +141,25 @@ python -m scripts.offline_demo
 
 The repository includes exact fixture bytes, labels and [per-file results](examples/benchmark.json). To regenerate the synthetic documents, run `python -m scripts.fixtures` and then rerun the commands above. Native tool versions, installed fonts, OCR models and platform can change the results. Optional browser verification uses `python -m pip install playwright`, `python -m playwright install chromium` and `python -m scripts.browser_smoke` with the service running. Set `CHROMIUM_PATH` to use an existing compatible browser.
 
-**Measured here:** on the Docker backend, nine scored synthetic documents (the original eight plus an invoice carrying an invisible text line) gave 5 true positives, 0 false positives, 4 true negatives and 0 false negatives. One additional bilingual PDF was inspected separately after its parser output was examined. The original native-backend run sent the benign bilingual DOCX to Review when OCR missed its Arabic line. This small development corpus cannot estimate production performance, and results move with OCR, font and LibreOffice versions.
+### Concealment techniques covered
+
+Each row is a fixture with the same visible invoice and one concealed line. All return Review, and the concealed line is removed from the reconciled text.
+
+| Technique | Fixture | Finding |
+|---|---|---|
+| PDF invisible render mode | `hidden-instruction.pdf` | `unmatched_layer` |
+| White text on a white page | `white-text.pdf`, `white-run.docx` | `concealed_text` |
+| Text one point tall | `tiny-text.pdf` | `concealed_text` |
+| Text covered by a flat shape | `covered-text.pdf` | `concealed_text` |
+| Text outside the page | `offpage-text.pdf` | `parser_only` |
+| Word hidden-text formatting | `hidden-run.docx` | `parser_only` |
+| Invisible Unicode tag characters | `tag-characters.docx` | `invisible_unicode`, with the decoded message |
+
+Three ordinary look-alikes (`small-print.pdf`, `gray-text.pdf`, `shaded-box.pdf`) must return Allow, so the checks are also tested for false alarms. Not covered: text hidden under a photo or textured image, PDF optional-content layers, comments and tracked changes, zero-width characters other than tag characters, and formats other than PDF and DOCX.
+
+OCR often misreads one letter. When positioned painted text sits in the same place and differs from OCR by a single letter in a word of four or more letters, FileTruth treats it as an OCR slip. Anything containing a digit, and any shorter word, must match exactly. The cost of this rule: a one-letter change made by covering real text with an image of near-identical text would not be flagged.
+
+**Measured here:** on the Docker backend, 19 scored synthetic documents gave 12 true positives, 0 false positives, 7 true negatives and 0 false negatives. One additional bilingual PDF was inspected separately after its parser output was examined. The original native-backend run sent the benign bilingual DOCX to Review when OCR missed its Arabic line. This small development corpus cannot estimate production performance, and results move with OCR, font and LibreOffice versions.
 
 License: [GNU AGPL v3](LICENSE).
 

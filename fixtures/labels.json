@@ -30,6 +30,66 @@
     "language": "eng"
   },
   {
+    "file": "white-text.pdf",
+    "mismatch": true,
+    "description": "White text on a white page",
+    "language": "eng"
+  },
+  {
+    "file": "tiny-text.pdf",
+    "mismatch": true,
+    "description": "Text one point tall",
+    "language": "eng"
+  },
+  {
+    "file": "offpage-text.pdf",
+    "mismatch": true,
+    "description": "Text positioned above the top edge of the page",
+    "language": "eng"
+  },
+  {
+    "file": "covered-text.pdf",
+    "mismatch": true,
+    "description": "Text covered by a white rectangle",
+    "language": "eng"
+  },
+  {
+    "file": "hidden-run.docx",
+    "mismatch": true,
+    "description": "Word run formatted as hidden text",
+    "language": "eng"
+  },
+  {
+    "file": "white-run.docx",
+    "mismatch": true,
+    "description": "White text in a Word paragraph",
+    "language": "eng"
+  },
+  {
+    "file": "tag-characters.docx",
+    "mismatch": true,
+    "description": "Invisible Unicode tag characters",
+    "language": "eng"
+  },
+  {
+    "file": "small-print.pdf",
+    "mismatch": false,
+    "description": "Readable small print in a footer",
+    "language": "eng"
+  },
+  {
+    "file": "gray-text.pdf",
+    "mismatch": false,
+    "description": "Readable mid-grey text",
+    "language": "eng"
+  },
+  {
+    "file": "shaded-box.pdf",
+    "mismatch": false,
+    "description": "Text inside a light grey box",
+    "language": "eng"
+  },
+  {
     "file": "delivery-ar-en.pdf",
     "mismatch": true,
     "description": "The visible Arabic line سجل التسليم is corrupted in pinned pypdf output.",

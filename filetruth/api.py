@@ -1,4 +1,5 @@
 import asyncio
+import re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -36,17 +37,13 @@ def health():
 
 @app.get("/api/demo")
 def demo(sample: str = "handover"):
-    if sample not in {
-        "handover",
-        "hidden-instruction",
-        "revised",
-        "searchable",
-        "bilingual-footer",
-    }:
+    # The name is matched against a strict pattern before it touches the disk,
+    # so it can only ever select a report file inside examples/.
+    if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", sample) or sample == "benchmark":
         raise HTTPException(404, "Unknown example.")
     path = ROOT / "examples" / (sample + ".json")
     if not path.is_file():
-        raise HTTPException(404, "Generate the demo report first.")
+        raise HTTPException(404, "Unknown example.")
     return FileResponse(path, media_type="application/json")
 
 
